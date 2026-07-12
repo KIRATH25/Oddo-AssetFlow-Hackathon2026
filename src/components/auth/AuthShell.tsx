@@ -14,8 +14,8 @@ export const AuthShell: React.FC<AuthShellProps> = ({ children, activeKey }) => 
       <AuthLeftPanel />
 
       {/* Right panel: 55% width on desktop, 100% on mobile */}
-      <div className="w-full lg:w-[55%] min-h-screen bg-card flex flex-col justify-center items-center py-48 px-24 lg:px-[64px] overflow-y-auto">
-        <div className="w-full max-w-[420px] flex flex-col gap-32">
+      <div className="w-full lg:w-[55%] min-h-screen bg-card flex flex-col justify-center items-center py-32 px-24 lg:px-[64px] overflow-y-auto">
+        <div className={`w-full flex flex-col gap-24 transition-all duration-200 ${activeKey === 'signup' ? 'max-w-[500px]' : 'max-w-[420px]'}`}>
           {/* Animate page transitions (Login <-> Signup) inside the right panel container */}
           <AnimatePresence mode="wait">
             <motion.div
@@ -24,7 +24,7 @@ export const AuthShell: React.FC<AuthShellProps> = ({ children, activeKey }) => 
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -16 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="w-full flex flex-col gap-32"
+              className="w-full flex flex-col gap-24"
             >
               {children}
             </motion.div>

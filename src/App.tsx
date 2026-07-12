@@ -5,7 +5,8 @@ import Signup from './pages/Signup'
 import { useAuthRedirect } from './lib/auth'
 import type { UserProfile } from './lib/auth'
 import { supabase } from './lib/supabaseClient'
-import { Shield, Wrench, Users, User as UserIcon, LogOut, CheckCircle2, Package, Clock, FileText } from 'lucide-react'
+import ExecutiveDashboard from './pages/ExecutiveDashboard'
+
 
 function App() {
   const [route, setRoute] = useState<string>('login')
@@ -37,6 +38,19 @@ function App() {
       }, 1500)
       return () => clearTimeout(timer)
     } else {
+      // Check localStorage for offline demo session first
+      const localDemo = localStorage.getItem('assetflow_demo_profile')
+      if (localDemo) {
+        try {
+          const profile = JSON.parse(localDemo)
+          setUserProfile(profile)
+          setRoute('dashboard')
+          setIsCheckingSession(false)
+          return
+        } catch (e) {
+          localStorage.removeItem('assetflow_demo_profile')
+        }
+      }
       // Check active session on mount
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session && session.user) {
@@ -77,12 +91,16 @@ function App() {
   })
 
   const handleAuthSuccess = (profile: UserProfile | null) => {
+    if (profile) {
+      localStorage.setItem('assetflow_demo_profile', JSON.stringify(profile))
+    }
     setUserProfile(profile)
     setRoute('dashboard')
   }
 
   const handleSignOut = async () => {
     setIsCheckingSession(true)
+    localStorage.removeItem('assetflow_demo_profile')
     try {
       await supabase.auth.signOut()
     } catch (e) {
@@ -156,113 +174,11 @@ function App() {
 
   // 3. Authenticated Dashboard View (Role-aware mock)
   if (route === 'dashboard' && userProfile) {
-    const getRoleConfig = (role: string) => {
-      switch (role) {
-        case 'admin':
-          return {
-            label: 'Administrator',
-            color: 'bg-danger/10 border-danger/20 text-danger',
-            icon: <Shield size={16} />,
-            desc: 'Full read/write permissions over company assets, access configuration, and user audits.'
-          }
-        case 'assetManager':
-          return {
-            label: 'Asset Manager',
-            color: 'bg-primary/10 border-primary/20 text-primary',
-            icon: <Wrench size={16} />,
-            desc: 'Authorized to add new physical assets, assign custodians, and update asset status.'
-          }
-        case 'departmentHead':
-          return {
-            label: 'Department Head',
-            color: 'bg-info/10 border-info/20 text-info',
-            icon: <Users size={16} />,
-            desc: 'View reports, approve asset requests, and allocate budget limits for resources.'
-          }
-        case 'employee':
-        default:
-          return {
-            label: 'Employee',
-            color: 'bg-secondary/15 border-secondary/20 text-text-secondary',
-            icon: <UserIcon size={16} />,
-            desc: 'Submit new checkout requests, track your active physical assets, and report damage.'
-          }
-      }
-    }
-
-    const roleConfig = getRoleConfig(userProfile.role)
-
     return (
-      <div className="min-h-screen w-full bg-bg flex items-center justify-center p-24">
-        <div className="w-full max-w-[640px] bg-card rounded-card border border-border p-32 lg:p-48 shadow-soft flex flex-col gap-32">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-border/60 pb-24">
-            <div className="flex items-center gap-16">
-              <svg className="w-24 h-24 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                <path d="M2 17l10 5 10-5" />
-                <path d="M2 12l10 5 10-5" />
-              </svg>
-              <span className="text-[16px] font-bold text-text-primary">AssetFlow</span>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-8 px-16 h-40 border border-border rounded-control text-text-secondary hover:text-text-primary hover:bg-bg transition-colors text-[13px] font-medium active:scale-[0.98] focus:outline-none"
-            >
-              <LogOut size={16} />
-              <span>Sign out</span>
-            </button>
-          </div>
-
-          {/* User Info Card */}
-          <div className="flex flex-col gap-16">
-            <span className="text-[32px] font-heading font-bold text-primary select-none">
-              Welcome, {userProfile.full_name}
-            </span>
-            <div className="flex items-center gap-16 flex-wrap">
-              <span className="text-[14px] text-text-secondary">{userProfile.email}</span>
-              <div className={`flex items-center gap-8 px-12 py-[4px] rounded-full border text-[12px] font-semibold tracking-wide uppercase select-none ${roleConfig.color}`}>
-                {roleConfig.icon}
-                <span>{roleConfig.label}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Description */}
-          <div className="bg-bg/40 border border-border/40 p-16 rounded-control text-[14px] text-text-secondary leading-relaxed">
-            <p className="font-semibold text-text-primary mb-[4px]">Role Access Scope:</p>
-            {roleConfig.desc}
-          </div>
-
-          {/* Dummy stats / action blocks to feel premium */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16 select-none">
-            <div className="bg-card border border-border p-16 rounded-control flex flex-col gap-8">
-              <Package size={20} className="text-primary" />
-              <span className="text-[20px] font-bold text-text-primary">12</span>
-              <span className="text-[12px] text-text-secondary">Assigned Assets</span>
-            </div>
-            <div className="bg-card border border-border p-16 rounded-control flex flex-col gap-8">
-              <Clock size={20} className="text-warning" />
-              <span className="text-[20px] font-bold text-text-primary">2</span>
-              <span className="text-[12px] text-text-secondary">Pending Requests</span>
-            </div>
-            <div className="bg-card border border-border p-16 rounded-control flex flex-col gap-8">
-              <FileText size={20} className="text-success" />
-              <span className="text-[20px] font-bold text-text-primary">98%</span>
-              <span className="text-[12px] text-text-secondary">Compliance Score</span>
-            </div>
-          </div>
-
-          {/* Action Callout */}
-          <div className="border-t border-border/60 pt-24 flex items-center justify-between text-[13px] text-text-secondary font-medium">
-            <div className="flex items-center gap-8 text-success">
-              <CheckCircle2 size={16} />
-              <span>Supabase Session Active</span>
-            </div>
-            <span>v1.0.0 (SaaS Preview)</span>
-          </div>
-        </div>
-      </div>
+      <ExecutiveDashboard
+        userProfile={userProfile}
+        onSignOut={handleSignOut}
+      />
     )
   }
 

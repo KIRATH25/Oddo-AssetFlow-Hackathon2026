@@ -8,7 +8,16 @@ import Dashboard from './pages/Dashboard'
 import Sidebar from './components/layout/Sidebar'
 import TopBar from './components/layout/TopBar'
 import { supabase } from './lib/supabaseClient'
+import { motion } from 'framer-motion'
 import type { UserProfile } from './lib/auth'
+import { ToastProvider } from './components/shared/ToastContext'
+import RequireRole from './components/auth/RequireRole'
+import OrganizationLayout from './pages/Organization/OrganizationLayout'
+import DepartmentsTab from './pages/Organization/DepartmentsTab'
+import CategoriesTab from './pages/Organization/CategoriesTab'
+import EmployeesTab from './pages/Organization/EmployeesTab'
+import AssetDirectory from './pages/Assets/AssetDirectory'
+import ResourcePlanner from './pages/Planner/ResourcePlanner'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -24,13 +33,23 @@ const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
+      if (session) {
+        setIsAuthenticated(true)
+      } else {
+        const demoProfile = localStorage.getItem('assetflow_demo_profile')
+        setIsAuthenticated(!!demoProfile)
+      }
     })
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(!!session)
+      if (session) {
+        setIsAuthenticated(true)
+      } else {
+        const demoProfile = localStorage.getItem('assetflow_demo_profile')
+        setIsAuthenticated(!!demoProfile)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -69,7 +88,12 @@ const PublicRoute: React.FC<{ children: React.ReactElement }> = ({ children }) =
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
+      if (session) {
+        setIsAuthenticated(true)
+      } else {
+        const demoProfile = localStorage.getItem('assetflow_demo_profile')
+        setIsAuthenticated(!!demoProfile)
+      }
     })
   }, [])
 
@@ -141,99 +165,142 @@ const AuthCallbackPage: React.FC = () => {
 }
 
 export function App() {
-  const handleAuthSuccess = (_profile: UserProfile | null) => {
-    // Redirection happens automatically as App route triggers ProtectedRoute
+  const handleAuthSuccess = (profile: UserProfile | null) => {
+    if (profile) {
+      localStorage.setItem('assetflow_demo_profile', JSON.stringify(profile))
+    } else {
+      localStorage.removeItem('assetflow_demo_profile')
+    }
   }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Auth Routes */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <AuthShell activeKey="login">
-                  <Login onAuthSuccess={handleAuthSuccess} />
-                </AuthShell>
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/signup"
-            element={
-              <PublicRoute>
-                <AuthShell activeKey="signup">
-                  <Signup />
-                </AuthShell>
-              </PublicRoute>
-            }
-          />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Auth Routes */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <AuthShell activeKey="login">
+                    <Login onAuthSuccess={handleAuthSuccess} />
+                  </AuthShell>
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/signup"
+              element={
+                <PublicRoute>
+                  <AuthShell activeKey="signup">
+                    <Signup />
+                  </AuthShell>
+                </PublicRoute>
+              }
+            />
+            <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
-          {/* Protected Dashboard and Modules */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assets"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Assets Management" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/planner"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Resource Planner" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/analytics"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Analytics & Reports" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="System Settings" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/organization"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="Organization details" />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute>
-                <PlaceholderPage title="User Profile" />
-              </ProtectedRoute>
-            }
-          />
+            {/* Protected Dashboard and Modules */}
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/assets"
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-bg text-text-primary flex">
+                    <Sidebar />
+                    <div className="flex-grow pl-[260px] flex flex-col">
+                      <TopBar />
+                      <main className="mt-[72px] p-32 flex-grow overflow-y-auto">
+                        <motion.div
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                          className="flex flex-col gap-24 max-w-[1400px] mx-auto"
+                        >
+                          <AssetDirectory />
+                        </motion.div>
+                      </main>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/planner"
+              element={
+                <ProtectedRoute>
+                  <div className="min-h-screen bg-bg text-text-primary flex">
+                    <Sidebar />
+                    <div className="flex-grow pl-[260px] flex flex-col">
+                      <TopBar />
+                      <main className="mt-[72px] p-32 flex-grow overflow-y-auto">
+                        <motion.div
+                          initial={{ opacity: 0, y: 16 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, ease: 'easeOut' }}
+                          className="flex flex-col gap-24 max-w-[1400px] mx-auto"
+                        >
+                          <ResourcePlanner />
+                        </motion.div>
+                      </main>
+                    </div>
+                  </div>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/analytics"
+              element={
+                <ProtectedRoute>
+                  <PlaceholderPage title="Analytics & Reports" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <PlaceholderPage title="System Settings" />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/organization"
+              element={
+                <ProtectedRoute>
+                  <RequireRole role="Admin">
+                    <OrganizationLayout />
+                  </RequireRole>
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="departments" replace />} />
+              <Route path="departments" element={<DepartmentsTab />} />
+              <Route path="categories" element={<CategoriesTab />} />
+              <Route path="employees" element={<EmployeesTab />} />
+            </Route>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <PlaceholderPage title="User Profile" />
+                </ProtectedRoute>
+              }
+            />
 
-          {/* Root Redirect Fallbacks */}
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </BrowserRouter>
+            {/* Root Redirect Fallbacks */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </QueryClientProvider>
   )
 }

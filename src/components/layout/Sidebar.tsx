@@ -9,6 +9,7 @@ export const Sidebar: React.FC = () => {
   const currentPath = location.pathname
 
   const handleSignOut = async () => {
+    localStorage.removeItem('assetflow_demo_profile')
     await supabase.auth.signOut()
     navigate('/login')
   }

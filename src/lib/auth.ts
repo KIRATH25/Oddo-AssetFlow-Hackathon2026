@@ -81,6 +81,37 @@ export async function signUpWithEmail(name: string, email: string, password: str
  * Signs in a user using email and password, and returns their role-aware profile.
  */
 export async function signInWithEmail(email: string, password: string): Promise<{ session: any; profile: UserProfile | null }> {
+  // Demo offline preview fallback bypass
+  if (email.includes('demo.') && email.includes('@assetflow.dev')) {
+    let role: UserRole = 'employee';
+    let name = 'Demo Employee';
+    
+    if (email === 'demo.admin@assetflow.dev') {
+      role = 'admin';
+      name = 'Demo Admin';
+    } else if (email === 'demo.manager@assetflow.dev') {
+      role = 'assetManager';
+      name = 'Demo Asset Manager';
+    } else if (email === 'demo.head@assetflow.dev') {
+      role = 'departmentHead';
+      name = 'Demo Dept Head';
+    }
+    
+    const mockProfile: UserProfile = {
+      id: `demo-${role}-id`,
+      full_name: name,
+      email: email,
+      role: role,
+      department_id: null,
+      status: 'active'
+    };
+    
+    return {
+      session: { user: { id: mockProfile.id, email } },
+      profile: mockProfile
+    };
+  }
+
   const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password

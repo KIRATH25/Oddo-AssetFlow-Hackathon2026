@@ -1,0 +1,127 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  ASSET_MANAGER
+  EMPLOYEE
+}
+
+enum AssetStatus {
+  AVAILABLE
+  ASSIGNED
+  MAINTENANCE
+  RETIRED
+}
+
+enum AssignmentStatus {
+  ACTIVE
+  RETURNED
+}
+
+enum MaintenanceStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id           String   @id @db.Uuid
+  email        String   @unique
+  fullName     String
+  role         Role     @default(EMPLOYEE)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relationships
+  departmentId String?      @db.Uuid
+  department   Department?  @relation(fields: [departmentId], references: [id])
+  assignments  Assignment[]
+  auditLogs    AuditLog[]
+  notifications Notification[]
+}
+
+model Department {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @unique
+  users     User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Category {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique
+  description String?
+  assets      Asset[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Asset {
+  id           String        @id @default(uuid()) @db.Uuid
+  name         String
+  serialNumber String        @unique
+  status       AssetStatus   @default(AVAILABLE)
+  categoryId   String        @db.Uuid
+  category     Category      @relation(fields: [categoryId], references: [id])
+  assignments  Assignment[]
+  maintenances Maintenance[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Assignment {
+  id         String           @id @default(uuid()) @db.Uuid
+  assetId    String           @db.Uuid
+  asset      Asset            @relation(fields: [assetId], references: [id])
+  userId     String           @db.Uuid
+  user       User             @relation(fields: [userId], references: [id])
+  status     AssignmentStatus @default(ACTIVE)
+  assignedAt DateTime         @default(now())
+  returnedAt DateTime?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+}
+
+model Maintenance {
+  id          String            @id @default(uuid()) @db.Uuid
+  assetId     String            @db.Uuid
+  asset       Asset             @relation(fields: [assetId], references: [id])
+  description String
+  status      MaintenanceStatus @default(SCHEDULED)
+  scheduledAt DateTime
+  completedAt DateTime?
+  cost        Float?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  details   Json?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

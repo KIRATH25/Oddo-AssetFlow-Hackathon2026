@@ -147,7 +147,7 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="flex flex-col gap-32">
+    <div className="flex flex-col gap-16">
       {/* Headings */}
       <div className="flex flex-col gap-8">
         <h2 className="text-[36px] font-heading font-bold text-primary select-none">
@@ -185,63 +185,65 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
       </AnimatePresence>
 
       {/* Form */}
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-24">
-        {/* Full Name */}
-        <Input
-          {...register('fullName')}
-          label="Full name"
-          type="text"
-          id="signup-name"
-          placeholder="John Doe"
-          icon={<User />}
-          error={errors.fullName?.message}
-          autoComplete="name"
-        />
-
-        {/* Work Email */}
-        <Input
-          {...register('email')}
-          label="Work email"
-          type="email"
-          id="signup-email"
-          placeholder="you@company.com"
-          icon={<Mail />}
-          error={errors.email?.message}
-          autoComplete="email"
-        />
-
-        {/* Password */}
-        <div>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-16">
+        {/* Full Name & Work Email Row */}
+        <div className="grid grid-cols-2 gap-16">
           <Input
-            {...register('password')}
-            label="Password"
-            type="password"
-            id="signup-password"
-            placeholder="••••••••"
-            icon={<Lock />}
-            error={errors.password?.message}
-            autoComplete="new-password"
+            {...register('fullName')}
+            label="Full name"
+            type="text"
+            id="signup-name"
+            placeholder="John Doe"
+            icon={<User />}
+            error={errors.fullName?.message}
+            autoComplete="name"
           />
-          {/* Real-time Strength Meter */}
-          <PasswordStrengthMeter password={watchedPassword} />
+
+          <Input
+            {...register('email')}
+            label="Work email"
+            type="email"
+            id="signup-email"
+            placeholder="you@company.com"
+            icon={<Mail />}
+            error={errors.email?.message}
+            autoComplete="email"
+          />
         </div>
 
-        {/* Confirm Password */}
-        <Input
-          {...register('confirmPassword')}
-          label="Confirm password"
-          type="password"
-          id="signup-confirm-password"
-          placeholder="••••••••"
-          icon={<Lock />}
-          error={errors.confirmPassword?.message}
-          autoComplete="new-password"
-        />
+        {/* Password & Confirm Password Row */}
+        <div className="grid grid-cols-2 gap-16 items-start">
+          <div>
+            <Input
+              {...register('password')}
+              label="Password"
+              type="password"
+              id="signup-password"
+              placeholder="••••••••"
+              icon={<Lock />}
+              error={errors.password?.message}
+              autoComplete="new-password"
+            />
+            {/* Real-time Strength Meter */}
+            <PasswordStrengthMeter password={watchedPassword} />
+          </div>
+
+          <Input
+            {...register('confirmPassword')}
+            label="Confirm password"
+            type="password"
+            id="signup-confirm-password"
+            placeholder="••••••••"
+            icon={<Lock />}
+            error={errors.confirmPassword?.message}
+            autoComplete="new-password"
+          />
+        </div>
 
         {/* Static Info Banner (Tinted blue) */}
-        <div className="p-16 bg-info/10 border border-info/20 text-info rounded-control flex items-start gap-16 select-none">
-          <Info size={20} className="flex-shrink-0 mt-[2px] text-info" />
-          <p className="text-[13px] font-medium leading-relaxed">
+        <div className="py-8 px-16 bg-info/5 border border-info/15 text-info rounded-control flex items-center gap-16 select-none">
+          <Info size={16} className="flex-shrink-0 text-info" />
+          <p className="text-[12px] font-medium leading-normal text-left">
             Your account will be created as an Employee. An admin can grant additional access later.
           </p>
         </div>

@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #7C5A78;
+  --color-secondary: #A8A098;
+  --color-bg: #F7F6F4;
+  --color-card: #FFFFFF;
+  --color-border: #E7E3DF;
+  --color-text-primary: #1F1F1F;
+  --color-text-secondary: #6B6B6B;
+  --color-success: #4CAF50;
+  --color-warning: #F9A825;
+  --color-danger: #E53935;
+  --color-info: #2196F3;
+  --radius-card: 16px;
+  --radius-control: 10px;
+  --font-heading: 'Caveat', cursive;
+  --font-body: 'Inter', sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text-primary);
+    font-family: var(--font-body);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom transitions and scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-secondary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}
+
+/* Custom focus glow style for input fields */
+.focus-ring-glow:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(124, 90, 120, 0.15);
+  outline: none;
+}

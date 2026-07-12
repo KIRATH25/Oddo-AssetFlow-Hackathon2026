@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, User, AlertCircle, X, Info, CheckCircle, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import PasswordStrengthMeter from '../components/auth/PasswordStrengthMeter'
@@ -29,11 +30,10 @@ const signupSchema = z.object({
 
 type SignupFormInputs = z.infer<typeof signupSchema>;
 
-interface SignupProps {
-  onNavigate: (route: string) => void;
-}
+interface SignupProps {}
 
-export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
+export const Signup: React.FC<SignupProps> = () => {
+  const navigate = useNavigate()
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -135,8 +135,8 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
 
           <button
             type="button"
-            onClick={() => onNavigate('login')}
-            className="flex items-center justify-center gap-8 text-[14px] font-semibold text-text-secondary hover:text-text-primary transition-colors focus:outline-none"
+            onClick={() => navigate('/login')}
+            className="flex items-center justify-center gap-8 text-[14px] font-semibold text-text-secondary hover:text-text-primary transition-colors focus:outline-none cursor-pointer"
           >
             <ArrowLeft size={16} />
             <span>Back to sign in</span>
@@ -306,8 +306,8 @@ export const Signup: React.FC<SignupProps> = ({ onNavigate }) => {
         Already have an account?{' '}
         <button
           type="button"
-          onClick={() => onNavigate('login')}
-          className="font-semibold text-primary hover:underline focus:outline-none"
+          onClick={() => navigate('/login')}
+          className="font-semibold text-primary hover:underline focus:outline-none cursor-pointer"
         >
           Sign in
         </button>

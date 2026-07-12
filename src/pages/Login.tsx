@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Mail, Lock, AlertCircle, X, ChevronDown, ChevronUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import Input from '../components/ui/Input'
 import Button from '../components/ui/Button'
 import DemoAccessPanel from '../components/auth/DemoAccessPanel'
@@ -19,11 +20,11 @@ const loginSchema = z.object({
 type LoginFormInputs = z.infer<typeof loginSchema>;
 
 interface LoginProps {
-  onNavigate: (route: string) => void;
   onAuthSuccess: (profile: UserProfile | null) => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onNavigate, onAuthSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onAuthSuccess }) => {
+  const navigate = useNavigate()
   const [globalError, setGlobalError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showDemoPanel, setShowDemoPanel] = useState(false)
@@ -47,6 +48,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate, onAuthSuccess }) => {
     try {
       const { profile } = await signInWithEmail(data.email, data.password)
       onAuthSuccess(profile)
+      navigate('/dashboard')
     } catch (err: any) {
       setGlobalError(err.message || 'Incorrect email or password. Please try again.')
     } finally {
@@ -67,6 +69,7 @@ export const Login: React.FC<LoginProps> = ({ onNavigate, onAuthSuccess }) => {
 
   const handleDemoSuccess = (profile: UserProfile | null) => {
     onAuthSuccess(profile)
+    navigate('/dashboard')
   }
 
   const handleDemoError = (errMsg: string) => {
@@ -217,8 +220,8 @@ export const Login: React.FC<LoginProps> = ({ onNavigate, onAuthSuccess }) => {
         Don't have an account?{' '}
         <button
           type="button"
-          onClick={() => onNavigate('signup')}
-          className="font-semibold text-primary hover:underline focus:outline-none"
+          onClick={() => navigate('/signup')}
+          className="font-semibold text-primary hover:underline focus:outline-none cursor-pointer"
         >
           Sign up
         </button>

@@ -23,10 +23,19 @@ const queryClient = new QueryClient({
 const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAuthenticated(!!session)
-    })
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setIsAuthenticated(!!session)
+  })
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, session) => {
+    setIsAuthenticated(!!session)
+  })
+
+  return () => subscription.unsubscribe()
+}, [])
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsAuthenticated(!!session)

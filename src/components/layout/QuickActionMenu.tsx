@@ -8,7 +8,13 @@ export const QuickActionMenu: React.FC = () => {
 
   const actions = [
     { label: 'Register Asset', icon: <Box size={16} />, onClick: () => navigate('/assets') },
-    { label: 'Book Resource', icon: <Calendar size={16} />, onClick: () => navigate('/planner') },
+    { label: 'Book Resource', icon: <Calendar size={16} />, onClick: () => {
+      if (window.location.pathname === '/planner') {
+        window.dispatchEvent(new CustomEvent('open-create-booking-modal'))
+      } else {
+        navigate('/planner')
+      }
+    } },
     { label: 'Raise Maintenance Request', icon: <Wrench size={16} />, onClick: () => navigate('/settings') },
   ]
 

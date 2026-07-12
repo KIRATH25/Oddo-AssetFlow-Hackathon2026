@@ -24,11 +24,12 @@ CREATE POLICY "Allow users to update own profile" ON public.profiles FOR UPDATE 
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, role)
+  INSERT INTO public.profiles (id, full_name, role, email)
   VALUES (
     new.id,
     COALESCE(new.raw_user_meta_data->>'full_name', 'New User'),
-    COALESCE(new.raw_user_meta_data->>'role', 'Employee')
+    COALESCE(new.raw_user_meta_data->>'role', 'Employee'),
+    new.email
   );
   RETURN new;
 END;
@@ -58,13 +59,19 @@ CREATE POLICY "Allow write access to categories" ON public.categories FOR ALL US
 CREATE TABLE IF NOT EXISTS public.assets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  asset_tag TEXT NOT NULL UNIQUE,
+  asset_tag TEXT UNIQUE,
   category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
-  status TEXT NOT NULL CHECK (status IN ('Available', 'Allocated', 'Maintenance', 'Disposed')) DEFAULT 'Available',
+  status TEXT NOT NULL CHECK (status IN ('Available', 'Allocated', 'Reserved', 'Under Maintenance', 'Lost', 'Retired', 'Disposed')) DEFAULT 'Available',
   serial_number TEXT,
   location TEXT,
   purchase_date DATE,
   cost NUMERIC,
+  description TEXT,
+  photo_url TEXT,
+  is_bookable BOOLEAN DEFAULT false,
+  condition TEXT CHECK (condition IN ('New', 'Good', 'Fair', 'Poor')) DEFAULT 'Good',
+  department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
+  custom_fields JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -84,6 +91,8 @@ CREATE TABLE IF NOT EXISTS public.bookings (
   status TEXT NOT NULL CHECK (status IN ('upcoming', 'ongoing', 'completed', 'cancelled')) DEFAULT 'upcoming',
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
   end_time TIMESTAMP WITH TIME ZONE NOT NULL,
+  title TEXT,
+  is_all_day BOOLEAN DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -187,3 +196,70 @@ DROP POLICY IF EXISTS "Allow read access to activity_log" ON public.activity_log
 CREATE POLICY "Allow read access to activity_log" ON public.activity_log FOR SELECT USING (true);
 DROP POLICY IF EXISTS "Allow write access to activity_log" ON public.activity_log;
 CREATE POLICY "Allow write access to activity_log" ON public.activity_log FOR ALL USING (true);
+
+
+-- 10. Departments Table
+CREATE TABLE IF NOT EXISTS public.departments (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  head_user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  parent_department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
+  status TEXT NOT NULL CHECK (status IN ('active', 'inactive')) DEFAULT 'active',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Enable RLS on Departments (only Admin can write, anyone logged in can read)
+ALTER TABLE public.departments ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Allow public read access to departments" ON public.departments;
+CREATE POLICY "Allow public read access to departments" ON public.departments FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Allow admin write access to departments" ON public.departments;
+CREATE POLICY "Allow admin write access to departments" ON public.departments FOR ALL USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE profiles.id = auth.uid() AND profiles.role = 'Admin'
+  )
+);
+
+-- 11. Profile Columns Extension
+ALTER TABLE public.profiles 
+  ADD COLUMN IF NOT EXISTS department_id UUID REFERENCES public.departments(id) ON DELETE SET NULL,
+  ADD COLUMN IF NOT EXISTS status TEXT CHECK (status IN ('Active', 'Inactive')) DEFAULT 'Active',
+  ADD COLUMN IF NOT EXISTS phone TEXT,
+  ADD COLUMN IF NOT EXISTS email TEXT;
+
+-- 12. Categories Columns Extension
+ALTER TABLE public.categories 
+  ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '[]'::jsonb,
+  ADD COLUMN IF NOT EXISTS status TEXT CHECK (status IN ('active', 'inactive')) DEFAULT 'active',
+  ADD COLUMN IF NOT EXISTS type TEXT CHECK (type IN ('Asset Category', 'CSR Activity', 'Challenge')) DEFAULT 'Asset Category';
+
+
+-- 13. Asset Tag Sequence and Trigger (for AF-0001 format auto generation)
+CREATE SEQUENCE IF NOT EXISTS public.asset_tag_seq START WITH 1;
+
+CREATE OR REPLACE FUNCTION public.generate_asset_tag()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.asset_tag IS NULL OR NEW.asset_tag = '' THEN
+    NEW.asset_tag := 'AF-' || LPAD(nextval('public.asset_tag_seq')::text, 4, '0');
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER on_asset_created
+  BEFORE INSERT ON public.assets
+  FOR EACH ROW EXECUTE FUNCTION public.generate_asset_tag();
+
+-- 14. Enable btree_gist extension for UUID mapping in EXCLUDE constraints
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+-- 15. Exclusion constraint on bookings to prevent overlapping slots on active assets
+ALTER TABLE public.bookings DROP CONSTRAINT IF EXISTS bookings_overlap_exclusion;
+ALTER TABLE public.bookings ADD CONSTRAINT bookings_overlap_exclusion 
+  EXCLUDE USING gist (
+    asset_id WITH =,
+    tstzrange(start_time, end_time) WITH &&
+  ) WHERE (status IN ('upcoming', 'ongoing'));
+
+

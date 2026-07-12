@@ -7,6 +7,7 @@ interface EmptyStateProps {
   subtitle: string;
   actionLabel?: string;
   actionHref?: string;
+  onActionClick?: () => void;
 }
 
 export const EmptyState: React.FC<EmptyStateProps> = ({
@@ -15,6 +16,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
   subtitle,
   actionLabel,
   actionHref,
+  onActionClick,
 }) => {
   return (
     <div className="flex flex-col items-center justify-center text-center p-32 gap-16 min-h-[300px] select-none w-full h-full">
@@ -28,13 +30,22 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         <h4 className="text-[15px] font-semibold text-text-primary">{title}</h4>
         <p className="text-[13px] text-text-secondary leading-relaxed">{subtitle}</p>
       </div>
-      {actionLabel && actionHref && (
-        <Link
-          to={actionHref}
-          className="mt-8 px-16 h-36 border border-border bg-card rounded-control text-text-secondary hover:text-text-primary hover:bg-bg/40 font-medium text-[13px] flex items-center justify-center transition-colors active:scale-[0.98] focus:outline-none cursor-pointer"
-        >
-          {actionLabel}
-        </Link>
+      {actionLabel && (
+        actionHref ? (
+          <Link
+            to={actionHref}
+            className="mt-8 px-16 h-36 border border-border bg-card rounded-control text-text-secondary hover:text-text-primary hover:bg-bg/40 font-medium text-[13px] flex items-center justify-center transition-colors active:scale-[0.98] focus:outline-none cursor-pointer"
+          >
+            {actionLabel}
+          </Link>
+        ) : onActionClick ? (
+          <button
+            onClick={onActionClick}
+            className="mt-8 px-16 h-36 border border-border bg-card rounded-control text-text-secondary hover:text-text-primary hover:bg-bg/40 font-medium text-[13px] flex items-center justify-center transition-colors active:scale-[0.98] focus:outline-none cursor-pointer"
+          >
+            {actionLabel}
+          </button>
+        ) : null
       )}
     </div>
   )
